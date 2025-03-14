@@ -518,11 +518,42 @@ function createTaskElement(task) {
   const content = document.createElement('div');
   content.className = 'task-content';
   content.textContent = task.text;
+  
+  // Add date information
+  const dateInfo = document.createElement('div');
+  dateInfo.className = 'task-date-info';
+  
+  // Format the date
+  const taskDate = new Date(task.createdAt);
+  const formattedDate = taskDate.toLocaleDateString(undefined, { 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric'
+  });
+  
+  dateInfo.innerHTML = `
+    <span class="task-date">
+      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+        <line x1="16" y1="2" x2="16" y2="6"></line>
+        <line x1="8" y1="2" x2="8" y2="6"></line>
+        <line x1="3" y1="10" x2="21" y2="10"></line>
+      </svg>
+      ${formattedDate}
+    </span>
+  `;
+  
+  const contentWrapper = document.createElement('div');
+  contentWrapper.className = 'content-wrapper';
+  contentWrapper.appendChild(content);
+  contentWrapper.appendChild(dateInfo);
 
   const actions = document.createElement('div');
   actions.className = 'task-actions';
 
   const editButton = document.createElement('button');
+  editButton.className = 'action-button edit-button';
+  editButton.title = 'Edit task';
   editButton.innerHTML = `
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -532,6 +563,8 @@ function createTaskElement(task) {
   editButton.addEventListener('click', () => editTask(task.id));
 
   const deleteButton = document.createElement('button');
+  deleteButton.className = 'action-button delete-button';
+  deleteButton.title = 'Delete task';
   deleteButton.innerHTML = `
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="3 6 5 6 21 6"></polyline>
@@ -544,8 +577,30 @@ function createTaskElement(task) {
   actions.appendChild(deleteButton);
 
   taskElement.appendChild(checkbox);
-  taskElement.appendChild(content);
+  taskElement.appendChild(contentWrapper);
   taskElement.appendChild(actions);
+
+  // Add ripple effect on click
+  taskElement.addEventListener('mousedown', function(e) {
+    if (e.target === taskElement || e.target === contentWrapper || e.target === content) {
+      const ripple = document.createElement('span');
+      ripple.className = 'ripple';
+      this.appendChild(ripple);
+      
+      const rect = this.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height);
+      
+      ripple.style.width = ripple.style.height = `${size}px`;
+      ripple.style.left = `${e.clientX - rect.left - size/2}px`;
+      ripple.style.top = `${e.clientY - rect.top - size/2}px`;
+      
+      ripple.classList.add('active');
+      
+      setTimeout(() => {
+        ripple.remove();
+      }, 500);
+    }
+  });
 
   return taskElement;
 }
@@ -569,17 +624,77 @@ function updateTaskCount() {
   }
 }
 
-// Toast notifications
+// Enhanced Toast notifications
 function showToast(message, type = 'success') {
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;
-  toast.textContent = message;
+  
+  // Add icons based on toast type
+  let iconSvg = '';
+  switch(type) {
+    case 'success':
+      iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+      </svg>`;
+      break;
+    case 'warning':
+      iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+        <line x1="12" y1="9" x2="12" y2="13"></line>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+      </svg>`;
+      break;
+    case 'error':
+      iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="15" y1="9" x2="9" y2="15"></line>
+        <line x1="9" y1="9" x2="15" y2="15"></line>
+      </svg>`;
+      break;
+    default:
+      iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4a76a8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>`;
+  }
+  
+  // Create the toast with content and close button
+  toast.innerHTML = `
+    <div class="toast-icon">${iconSvg}</div>
+    <div class="toast-content">${message}</div>
+    <div class="toast-close">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </div>
+  `;
+  
+  // Add to container
   toastContainer.appendChild(toast);
   
-  // Remove toast after animation completes
+  // Add close button functionality
+  const closeBtn = toast.querySelector('.toast-close');
+  closeBtn.addEventListener('click', () => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(-10px)';
+    setTimeout(() => toast.remove(), 300);
+  });
+  
+  // Remove toast after longer duration (5 seconds)
   setTimeout(() => {
-    toast.remove();
-  }, 3000);
+    if (toast.parentNode === toastContainer) {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(-10px)';
+      setTimeout(() => {
+        if (toast.parentNode === toastContainer) {
+          toast.remove();
+        }
+      }, 300);
+    }
+  }, 5000); // Increased from 3000 to 5000ms
 }
 
 // Confirmation dialog
@@ -798,10 +913,15 @@ function registerEventListeners() {
 function setupServiceWorker() {
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').then(registration => {
+      // Determine the correct path based on current location
+      const basePath = location.pathname.includes('/todo/') ? '/todo' : '';
+      const swPath = `${basePath}/sw.js`;
+      
+      navigator.serviceWorker.register(swPath).then(registration => {
         console.log('ServiceWorker registered with scope:', registration.scope);
       }).catch(error => {
         console.log('ServiceWorker registration failed:', error);
+        showToast('Service worker registration failed. Some offline features may not work.', 'warning');
       });
     });
     
