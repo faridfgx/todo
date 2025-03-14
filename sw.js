@@ -1,13 +1,14 @@
 // Service Worker for Vault To-Do App
 const CACHE_NAME = 'vault-todo-v1';
+const BASE_PATH = '/todo'; // GitHub Pages subdirectory
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/app.js',
-  '/styles.css',
-  '/manifest.json',
-  '/icon-192.png',
-  '/icon-512.png'
+  `${BASE_PATH}/`,
+  `${BASE_PATH}/index.html`,
+  `${BASE_PATH}/app.js`,
+  `${BASE_PATH}/styles.css`,
+  `${BASE_PATH}/manifest.json`,
+  `${BASE_PATH}/icon-192.png`,
+  `${BASE_PATH}/icon-512.png`
 ];
 
 // Install event - Cache initial assets
@@ -38,6 +39,11 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - Serve from cache, then network with cache update
 self.addEventListener('fetch', (event) => {
+  // Skip cross-origin requests
+  if (!event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+  
   event.respondWith(
     caches.match(event.request)
       .then((cachedResponse) => {
@@ -68,7 +74,7 @@ self.addEventListener('fetch', (event) => {
           .catch(() => {
             // If both cache and network fail, return a fallback
             if (event.request.mode === 'navigate') {
-              return caches.match('/index.html');
+              return caches.match(`${BASE_PATH}/index.html`);
             }
             
             return new Response('Network error occurred', {
